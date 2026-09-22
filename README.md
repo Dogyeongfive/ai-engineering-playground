@@ -35,5 +35,6 @@ Open Swagger UI at <http://127.0.0.1:8000/docs>.
 - `POST /chat`
 - `GET`, `POST`, `PATCH`, `DELETE /users`
 - `GET`, `POST /documents`
+- `POST /documents/search`
 - `POST /documents/{document_id}/chunk-preview`
 - `POST /documents/{document_id}/embed`

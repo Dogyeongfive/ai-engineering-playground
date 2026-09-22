@@ -27,3 +27,21 @@ class DocumentEmbeddingResponse(BaseModel):
     chunk_count: int
     embedding_model: str
     vector_dimensions: int
+
+
+class DocumentSearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=3, ge=1, le=20)
+
+
+class DocumentSearchResult(BaseModel):
+    document_id: int
+    chunk_id: int
+    chunk_index: int
+    content: str
+    score: float
+
+
+class DocumentSearchResponse(BaseModel):
+    query: str
+    results: list[DocumentSearchResult]

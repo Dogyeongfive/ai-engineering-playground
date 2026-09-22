@@ -56,3 +56,8 @@ def replace_document_chunks(
     db.add_all(document_chunks)
     db.commit()
     return document_chunks
+
+
+def list_document_chunks(db: Session):
+    statement = select(DocumentChunk).order_by(DocumentChunk.chunk_id)
+    return db.scalars(statement).all()

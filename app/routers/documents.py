@@ -9,6 +9,8 @@ from app.schemas.document import (
     DocumentCreate,
     DocumentEmbeddingResponse,
     DocumentResponse,
+    DocumentSearchRequest,
+    DocumentSearchResponse,
 )
 from app.services import chunking_service, document_service
 
@@ -37,6 +39,18 @@ def create_document(
         db,
         request.title,
         request.content,
+    )
+
+
+@router.post("/search", response_model=DocumentSearchResponse)
+def search_documents(
+    request: DocumentSearchRequest,
+    db: Session = Depends(get_db),
+):
+    return document_service.search_document_chunks(
+        db,
+        request.query,
+        request.top_k,
     )
 
 
