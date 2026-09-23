@@ -29,6 +29,16 @@ class DocumentEmbeddingResponse(BaseModel):
     vector_dimensions: int
 
 
+class DocumentUploadResponse(BaseModel):
+    document_id: int
+    filename: str
+    title: str
+    chunk_count: int
+    embedding_model: str
+    vector_dimensions: int
+    status: str
+
+
 class DocumentSearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     top_k: int = Field(default=3, ge=1, le=20)

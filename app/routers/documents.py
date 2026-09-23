@@ -1,6 +1,14 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -11,10 +19,12 @@ from app.schemas.document import (
     DocumentResponse,
     DocumentSearchRequest,
     DocumentSearchResponse,
+    DocumentUploadResponse,
 )
-from app.services import chunking_service, document_service
+from app.services import chunking_service, document_service, ingestion_service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+MAX_UPLOAD_BYTES = 1_000_000
 
 
 @router.get("", response_model=list[DocumentResponse])
@@ -40,6 +50,48 @@ def create_document(
         request.title,
         request.content,
     )
+
+
+@router.post(
+    "/upload",
+    response_model=DocumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def upload_document(
+    file: UploadFile = File(...),
+    chunk_size: int = Query(default=300, ge=50, le=2000),
+    overlap: int = Query(default=50, ge=0, le=500),
+    db: Session = Depends(get_db),
+):
+    if overlap >= chunk_size:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="overlap must be smaller than chunk_size",
+        )
+
+    filename = file.filename or ""
+    file_bytes = file.file.read(MAX_UPLOAD_BYTES + 1)
+    file.file.close()
+
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="file must be 1 MB or smaller",
+        )
+
+    try:
+        return ingestion_service.ingest_txt(
+            db,
+            filename,
+            file_bytes,
+            chunk_size,
+            overlap,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(error),
+        ) from error
 
 
 @router.post("/search", response_model=DocumentSearchResponse)
