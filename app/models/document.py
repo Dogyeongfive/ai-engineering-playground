@@ -10,6 +10,12 @@ class Document(Base):
     document_id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
 
 
 class DocumentChunk(Base):
@@ -29,6 +35,7 @@ class DocumentChunk(Base):
         index=True,
     )
     chunk_index: Mapped[int] = mapped_column(nullable=False)
+    page_number: Mapped[int | None] = mapped_column(nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[str] = mapped_column(Text, nullable=False)
     embedding_model: Mapped[str] = mapped_column(String(100), nullable=False)

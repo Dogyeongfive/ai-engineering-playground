@@ -24,7 +24,7 @@ from app.schemas.document import (
 from app.services import chunking_service, document_service, ingestion_service
 
 router = APIRouter(prefix="/documents", tags=["documents"])
-MAX_UPLOAD_BYTES = 1_000_000
+MAX_UPLOAD_BYTES = 10_000_000
 
 
 @router.get("", response_model=list[DocumentResponse])
@@ -76,17 +76,25 @@ def upload_document(
     if len(file_bytes) > MAX_UPLOAD_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-            detail="file must be 1 MB or smaller",
+            detail="file must be 10 MB or smaller",
         )
 
     try:
-        return ingestion_service.ingest_txt(
+        return ingestion_service.ingest_document(
             db,
             filename,
             file_bytes,
             chunk_size,
             overlap,
         )
+    except ingestion_service.DuplicateDocumentError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Document already exists with document_id="
+                f"{error.document_id}"
+            ),
+        ) from error
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

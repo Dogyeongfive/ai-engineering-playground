@@ -18,5 +18,4 @@ def rag_chat(
         request.question,
         request.top_k,
         request.min_score,
-        request.min_margin,
     )

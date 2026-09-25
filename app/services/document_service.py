@@ -16,8 +16,30 @@ def list_documents(db: Session, offset: int, limit: int):
     return document_repository.list_documents(db, offset, limit)
 
 
-def create_document(db: Session, title: str, content: str):
-    return document_repository.create_document(db, title, content)
+def find_duplicate_document(
+    db: Session,
+    content_hash: str,
+    content: str,
+):
+    return document_repository.find_duplicate_document(
+        db,
+        content_hash,
+        content,
+    )
+
+
+def create_document(
+    db: Session,
+    title: str,
+    content: str,
+    content_hash: str | None = None,
+):
+    return document_repository.create_document(
+        db,
+        title,
+        content,
+        content_hash,
+    )
 
 
 def embed_document(
@@ -31,17 +53,32 @@ def embed_document(
         chunk_size,
         overlap,
     )
-    embeddings = embedding_service.create_embeddings(chunks)
-    document_repository.replace_document_chunks(
+    return embed_chunks(
         db,
         document.document_id,
         chunks,
+        [None] * len(chunks),
+    )
+
+
+def embed_chunks(
+    db: Session,
+    document_id: int,
+    chunks: list[str],
+    page_numbers: list[int | None],
+):
+    embeddings = embedding_service.create_embeddings(chunks)
+    document_repository.replace_document_chunks(
+        db,
+        document_id,
+        chunks,
         embeddings,
+        page_numbers,
         embedding_service.EMBEDDING_MODEL,
     )
 
     return {
-        "document_id": document.document_id,
+        "document_id": document_id,
         "chunk_count": len(chunks),
         "embedding_model": embedding_service.EMBEDDING_MODEL,
         "vector_dimensions": len(embeddings[0]) if embeddings else 0,
@@ -64,6 +101,7 @@ def search_document_chunks(db: Session, query: str, top_k: int):
                 "document_id": chunk.document_id,
                 "chunk_id": chunk.chunk_id,
                 "chunk_index": chunk.chunk_index,
+                "page_number": chunk.page_number,
                 "content": chunk.content,
                 "score": score,
             }

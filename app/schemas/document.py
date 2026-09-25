@@ -33,6 +33,8 @@ class DocumentUploadResponse(BaseModel):
     document_id: int
     filename: str
     title: str
+    file_type: str
+    page_count: int | None
     chunk_count: int
     embedding_model: str
     vector_dimensions: int
@@ -48,6 +50,7 @@ class DocumentSearchResult(BaseModel):
     document_id: int
     chunk_id: int
     chunk_index: int
+    page_number: int | None
     content: str
     score: float
 

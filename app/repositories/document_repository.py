@@ -20,8 +20,32 @@ def list_documents(db: Session, offset: int, limit: int):
     return db.scalars(statement).all()
 
 
-def create_document(db: Session, title: str, content: str):
-    document = Document(title=title, content=content)
+def find_duplicate_document(
+    db: Session,
+    content_hash: str,
+    content: str,
+):
+    statement = select(Document).where(
+        (Document.content_hash == content_hash)
+        | (
+            (Document.content_hash.is_(None))
+            & (Document.content == content)
+        )
+    )
+    return db.scalars(statement).first()
+
+
+def create_document(
+    db: Session,
+    title: str,
+    content: str,
+    content_hash: str | None = None,
+):
+    document = Document(
+        title=title,
+        content=content,
+        content_hash=content_hash,
+    )
     db.add(document)
     db.commit()
     db.refresh(document)
@@ -33,6 +57,7 @@ def replace_document_chunks(
     document_id: int,
     chunks: list[str],
     embeddings: list[list[float]],
+    page_numbers: list[int | None],
     embedding_model: str,
 ):
     db.execute(
@@ -45,12 +70,13 @@ def replace_document_chunks(
         DocumentChunk(
             document_id=document_id,
             chunk_index=index,
+            page_number=page_number,
             content=content,
             embedding=json.dumps(embedding),
             embedding_model=embedding_model,
         )
-        for index, (content, embedding) in enumerate(
-            zip(chunks, embeddings, strict=True)
+        for index, (content, embedding, page_number) in enumerate(
+            zip(chunks, embeddings, page_numbers, strict=True)
         )
     ]
     db.add_all(document_chunks)
