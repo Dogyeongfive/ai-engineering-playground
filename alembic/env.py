@@ -7,6 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.db.database import Base
+from app.models import cs as cs_model
 from app.models import document as document_model
 from app.models import user as user_model
 

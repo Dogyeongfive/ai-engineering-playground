@@ -9,6 +9,7 @@ Hands-on practice for backend, AI engineering, RAG, agents, observability, and C
 - SQLAlchemy and Alembic migrations
 - Document storage and LangChain text chunking
 - OpenAI embeddings stored with document chunks
+- Function Calling CS agent with conversation memory and approval-gated actions
 
 ## Run locally
 
@@ -40,3 +41,16 @@ Open Swagger UI at <http://127.0.0.1:8000/docs>.
 - `POST /documents/{document_id}/chunk-preview`
 - `POST /documents/{document_id}/embed`
 - `POST /rag-chat`
+- `POST /cs-agent/chat`
+- `POST /cs-agent/actions/{action_id}/approve`
+
+Start a CS conversation without a `conversation_id`, then reuse the returned ID
+in later requests so phrases such as `그 주문` can refer to previous messages.
+Cancellation requests create a pending action; the order changes only after the
+separate approval endpoint is called.
+
+CS agent sample orders:
+
+- `1001`: preparing (cancellable)
+- `1002`: shipped
+- `1003`: delivered
