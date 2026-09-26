@@ -11,6 +11,48 @@ Hands-on practice for backend, AI engineering, RAG, agents, observability, and C
 - OpenAI embeddings stored with document chunks
 - Function Calling CS agent with conversation memory and approval-gated actions
 
+## Architecture
+
+```mermaid
+flowchart TB
+    Client[Client / Swagger UI] --> API[FastAPI]
+
+    subgraph Backend[Application layers]
+        API --> Router[Router]
+        Router --> Service[Service]
+        Service --> Repository[Repository]
+        Repository --> DB[(SQLite)]
+    end
+
+    subgraph RAG[RAG pipeline]
+        Upload[TXT / PDF upload] --> Parse[Parse text]
+        Parse --> Chunk[LangChain chunking]
+        Chunk --> Embed[OpenAI embeddings]
+        Embed --> VectorStore[(Document chunks and vectors)]
+        Question[User question] --> Retrieve[Cosine similarity retrieval]
+        VectorStore --> Retrieve
+        Retrieve --> Generate[LLM generation with sources]
+    end
+
+    subgraph Agent[CS agent]
+        Message[Customer message] --> Memory[(Conversation messages)]
+        Memory --> LLM[LLM tool selection]
+        LLM --> OrderTool[get_order]
+        LLM --> PolicyTool[get_cancellation_policy]
+        OrderTool --> Orders[(Customers and orders)]
+        PolicyTool --> LLM
+        Orders --> LLM
+        LLM --> Pending[Pending cancellation action]
+        Pending --> Approval{Human approval}
+        Approval -->|Approved| Execute[Update order to cancelled]
+    end
+
+    Service --> Parse
+    Generate --> Service
+    Service --> Message
+    Execute --> DB
+```
+
 ## Run locally
 
 ```bash
